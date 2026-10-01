@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>Дневник тренировок</title>
+<title>Дневник тренировок · вариант 2</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;800&display=swap" rel="stylesheet">
@@ -81,7 +81,28 @@ body.timing main{padding-bottom:110px}
 .ex{background:var(--card);border-radius:16px;padding:14px;margin-bottom:10px;border-left:4px solid transparent;transition:border-color .2s}
 .ex.done{border-left-color:var(--ok)}
 .ex.light{background:color-mix(in srgb,var(--card) 70%,var(--bg))}
-.top{display:flex;gap:10px;align-items:flex-start}
+.ex{padding:0!important;overflow:hidden}
+.hd{display:flex;gap:10px;align-items:center;padding:12px 10px 12px 14px;cursor:pointer;user-select:none}
+.hd:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:14px}
+.chev{width:20px;height:20px;flex:none;color:var(--hint);transition:transform .2s}
+.ex.open .chev{transform:rotate(180deg)}
+.ex.open{box-shadow:0 0 0 1.5px color-mix(in srgb,var(--wc) 55%,transparent)}
+.bd{padding:2px 14px 14px;border-top:1px solid var(--line)}
+.ex:not(.open) .bd{display:none}
+.sum{font-variant-numeric:tabular-nums}
+.sum b{color:var(--ok);font-weight:600}
+.upt{color:var(--up);font-weight:600}
+.rrow{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px}
+.rrow label{color:var(--hint);font-size:13px}
+.rstart{border:0;background:var(--soft);color:var(--accent);border-radius:10px;padding:8px 12px;font-weight:600}
+.rtxt{font-size:14px;font-weight:600}
+.weeks{overflow-x:auto;scrollbar-width:none;margin:0 -12px 8px;padding:0 12px}
+.weeks::-webkit-scrollbar{display:none}
+.wk{flex:none;white-space:nowrap}
+.wk.ico{width:32px;justify-content:center;padding:5px 0}
+.tgl{flex:none}
+.set::-webkit-inner-spin-button,.set::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.set{-moz-appearance:textfield;appearance:textfield}
 .nm{flex:1;min-width:0}
 .nm h3{margin:0;font-size:16px;font-weight:600}
 .nm p{margin:2px 0 0;color:var(--hint);font-size:13px}
@@ -324,7 +345,7 @@ function nowWeek(p) {
 /* ---------- Состояние ---------- */
 const S = { settings: { prog: "main", timer: true }, ex: {} };
 const P = {};             // тренировки: {id, name, c, anchor, weeks:[{days, d}]}
-let curDay = null, curWeek = null;
+let curDay = null, curWeek = null, openKey = null;
 let draft = null;         // черновик в редакторе
 
 function hashKey(s) {
@@ -428,16 +449,17 @@ function tick() {
 const $ = id => document.getElementById(id);
 
 function renderHeader() {
-  const p = prog(), two = p.weeks.length === 2, nw = nowWeek(p);
+  const p = prog(), two = p.weeks.length === 2, nw = nowWeek(p), list = progList();
   document.body.dataset.wc = curWeek + 1;
-  $("progs").innerHTML = progList().map(x =>
-    `<button class="pill${x.id === p.id ? " on" : ""}" data-prog="${x.id}">${esc(x.name)}</button>`).join("") +
-    `<button class="pill ico" data-edit aria-label="Изменить тренировку">✎</button>` +
-    `<button class="pill ico" data-new aria-label="Новая тренировка">＋</button>`;
+  $("progs").hidden = list.length < 2;
+  $("progs").innerHTML = list.length < 2 ? "" : list.map(x =>
+    `<button class="pill${x.id === p.id ? " on" : ""}" data-prog="${x.id}">${esc(x.name)}</button>`).join("");
   $("weeks").innerHTML = (two ? [0, 1].map(i =>
-      `<button class="wk${i === curWeek ? " on" : ""}${i === nw ? " now" : ""}" data-week="${i}">Неделя ${i + 1}${i === nw ? "<small>сейчас</small>" : ""}</button>`).join("") +
+      `<button class="wk${i === curWeek ? " on" : ""}${i === nw ? " now" : ""}" data-week="${i}"${i === nw ? ' title="Текущая неделя"' : ""}>Неделя ${i + 1}</button>`).join("") +
       `<button class="wk ico" data-swap title="Поменять текущую неделю" aria-label="Поменять текущую неделю">⇄</button>` : "") +
-    `<button class="tgl${S.settings.timer ? " on" : ""}" data-timer aria-pressed="${S.settings.timer}"><span class="sw"></span>Таймер</button>`;
+    `<button class="wk ico" data-edit title="Изменить тренировку" aria-label="Изменить тренировку">✎</button>` +
+    `<button class="wk ico" data-new title="Новая тренировка" aria-label="Новая тренировка">＋</button>` +
+    `<button class="tgl${S.settings.timer ? " on" : ""}" data-timer aria-pressed="${S.settings.timer}" aria-label="Таймер отдыха" title="Таймер отдыха"><span>⏱</span><span class="sw"></span></button>`;
   const days = week().days, isNow = curWeek === nw;
   $("days").style.gridTemplateColumns = `repeat(${days.length},1fr)`;
   $("days").innerHTML = days.map(n => {
@@ -455,27 +477,39 @@ function historyHTML(s, ex) {
   return `<details><summary>История (${s.h.length})</summary><ul class="hist">${li}</ul></details>`;
 }
 const checkHTML = done => `<label class="chk" title="Выполнил"><input type="checkbox" ${done ? "checked" : ""} aria-label="Выполнил"><span></span></label>`;
+const CHEV = `<svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// шапка карточки: всегда видна; по нажатию раскрывается тело
+function headHTML(ex, title, summary, done) {
+  const open = openKey === ex.key;
+  return `
+    <div class="hd" data-toggle role="button" tabindex="0" aria-expanded="${open}">
+      <div class="nm"><h3>${title}</h3><p class="sum">${summary}</p></div>
+      ${checkHTML(done)}
+      ${CHEV}
+    </div>`;
+}
 
 function cardioHTML(ex) {
   const s = st(ex.key), te = todayEntry(s), pe = prevEntry(s);
   const m = te ? te.m : (s.m ?? ex.min);
+  const summary = te ? `<b>✓ ${te.m} мин</b>` : `Цель ${ex.min} мин`;
   return `
-  <article class="ex cardio${te ? " done" : ""}" data-id="${ex.key}">
-    <div class="top">
-      <div class="nm"><h3>${esc(ex.name)}<span class="tag c">кардио</span></h3><p>Цель: ${ex.min} мин</p></div>
-      ${checkHTML(te)}
-    </div>
-    <div class="wrow">
-      <label>Минуты</label>
-      <div class="step">
-        <button data-act="-" aria-label="Меньше минут">−</button>
-        <input class="mn" inputmode="numeric" value="${m}" aria-label="Минуты кардио">
-        <span class="kg">мин</span>
-        <button data-act="+" aria-label="Больше минут">+</button>
+  <article class="ex cardio${te ? " done" : ""}${openKey === ex.key ? " open" : ""}" data-id="${ex.key}">
+    ${headHTML(ex, `${esc(ex.name)}<span class="tag c">кардио</span>`, summary, te)}
+    <div class="bd">
+      <div class="wrow">
+        <label>Минуты</label>
+        <div class="step">
+          <button data-act="-" aria-label="Меньше минут">−</button>
+          <input class="mn" inputmode="numeric" value="${m}" aria-label="Минуты кардио">
+          <span class="kg">мин</span>
+          <button data-act="+" aria-label="Больше минут">+</button>
+        </div>
       </div>
+      <div class="last">${pe ? `Прошлый раз ${fmtD(pe.d)}: <b>${pe.m} мин</b>` : "Прошлых записей нет"}</div>
+      ${historyHTML(s, ex)}
     </div>
-    <div class="last">${pe ? `Прошлый раз ${fmtD(pe.d)}: <b>${pe.m} мин</b>` : "Прошлых записей нет"}</div>
-    ${historyHTML(s, ex)}
   </article>`;
 }
 
@@ -490,35 +524,50 @@ function cardHTML(ex) {
     return `<input class="${cls}" data-i="${i}" type="number" inputmode="numeric" min="0" placeholder="${maxR}" value="${v}" aria-label="Подход ${i + 1}, повторения">`;
   }).join("");
   const sug = suggestion(ex, s);
-  const rest = S.settings.timer ? `<button class="rb" data-rest title="Запустить таймер">⏱ ${esc(ex.rest)}</button>` : `отдых ${esc(ex.rest)}`;
+  const filled = reps.filter(v => v !== "" && v != null).length;
+  const summary = te
+    ? `<b>✓ ${te.w != null ? fmtW(te.w) + " кг · " : ""}${te.r.join("/")}</b>`
+    : `${fmtR(ex.sets)} × ${fmtR(ex.reps)}${s.w != null ? ` · ${fmtW(s.w)} кг` : ""}${filled ? ` · ${filled}/${minS} подх.` : ""}${sug ? ` · <span class="upt">↑ вес</span>` : ""}`;
+  const rest = S.settings.timer
+    ? `<button class="rstart" data-rest>⏱ Старт ${esc(ex.rest)}</button>`
+    : `<span class="rtxt">${esc(ex.rest)}</span>`;
   return `
-  <article class="ex${te ? " done" : ""}${ex.light ? " light" : ""}" data-id="${ex.key}">
-    <div class="top">
-      <div class="nm">
-        <h3>${esc(ex.name)}${ex.light ? '<span class="tag">добивка</span>' : ""}</h3>
-        <p>${fmtR(ex.sets)} × ${fmtR(ex.reps)}, ${rest}</p>
+  <article class="ex${te ? " done" : ""}${ex.light ? " light" : ""}${openKey === ex.key ? " open" : ""}" data-id="${ex.key}">
+    ${headHTML(ex, `${esc(ex.name)}${ex.light ? '<span class="tag">добивка</span>' : ""}`, summary, te)}
+    <div class="bd">
+      <div class="wrow">
+        <label>Рабочий вес</label>
+        <div class="step">
+          <button data-act="-" aria-label="Уменьшить вес">−</button>
+          <input class="w" inputmode="decimal" placeholder="—" value="${s.w == null ? "" : fmtW(s.w)}" aria-label="Рабочий вес, кг">
+          <span class="kg">кг</span>
+          <button data-act="+" aria-label="Увеличить вес">+</button>
+        </div>
       </div>
-      ${checkHTML(te)}
+      ${ex.light ? "" : `
+      <div class="wurow">
+        <label>Разминочный вес</label>
+        <div class="wubox"><input class="wu" inputmode="decimal" placeholder="—" value="${s.wu == null ? "" : fmtW(s.wu)}" aria-label="Разминочный вес, кг"><span>кг</span></div>
+      </div>`}
+      <div class="sets"><span class="lb">Повторы</span>${sets}</div>
+      <div class="rrow"><label>Отдых</label>${rest}</div>
+      <div class="last">${pe ? `Прошлый раз ${fmtD(pe.d)}: ${pe.w != null ? `<b>${fmtW(pe.w)} кг</b>, ` : ""}${pe.r.join(" / ")}${pe.wu != null ? ` · разминка ${fmtW(pe.wu)} кг` : ""}` : "Прошлых записей нет — введи вес и отметь подходы"}</div>
+      ${sug ? `<div class="up">Два раза подряд закрыл ${maxR} повторов<button data-up="${sug}">Поставить ${fmtW(sug)} кг</button></div>` : ""}
+      ${historyHTML(s, ex)}
     </div>
-    <div class="wrow">
-      <label>Рабочий вес</label>
-      <div class="step">
-        <button data-act="-" aria-label="Уменьшить вес">−</button>
-        <input class="w" inputmode="decimal" placeholder="—" value="${s.w == null ? "" : fmtW(s.w)}" aria-label="Рабочий вес, кг">
-        <span class="kg">кг</span>
-        <button data-act="+" aria-label="Увеличить вес">+</button>
-      </div>
-    </div>
-    ${ex.light ? "" : `
-    <div class="wurow">
-      <label>Разминочный вес</label>
-      <div class="wubox"><input class="wu" inputmode="decimal" placeholder="—" value="${s.wu == null ? "" : fmtW(s.wu)}" aria-label="Разминочный вес, кг"><span>кг</span></div>
-    </div>`}
-    <div class="last">${pe ? `Прошлый раз ${fmtD(pe.d)}: ${pe.w != null ? `<b>${fmtW(pe.w)} кг</b>, ` : ""}${pe.r.join(" / ")}${pe.wu != null ? ` · разминка ${fmtW(pe.wu)} кг` : ""}` : "Прошлых записей нет — введи вес и отметь подходы"}</div>
-    <div class="sets"><span class="lb">Повторы</span>${sets}</div>
-    ${sug ? `<div class="up">Два раза подряд закрыл ${maxR} повторов<button data-up="${sug}">Поставить ${fmtW(sug)} кг</button></div>` : ""}
-    ${historyHTML(s, ex)}
   </article>`;
+}
+
+function scrollToCard(key) {
+  const el = document.querySelector(`.ex[data-id="${key}"]`); if (!el) return;
+  const top = el.getBoundingClientRect().top + window.scrollY - $("hdr").offsetHeight - 8;
+  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+function toggleCard(key) {
+  openKey = openKey === key ? null : key;
+  renderMain();
+  if (openKey) scrollToCard(openKey);
+  haptic();
 }
 
 function dayInfo() {
@@ -574,7 +623,14 @@ function complete(card, ex, s) {
   s.dr = null;
   haptic("ok");
   persist(ex.key, true);
-  rerenderCard(card);
+  if (openKey === ex.key) {
+    // открываем следующее невыполненное упражнение
+    const list = exList(), i = list.findIndex(x => x.key === ex.key);
+    const next = [...list.slice(i + 1), ...list.slice(0, i)].find(x => !todayEntry(st(x.key)));
+    openKey = next ? next.key : null;
+    renderHeader(); renderMain();
+    if (next) scrollToCard(next.key);
+  } else rerenderCard(card);
 }
 function uncomplete(card, ex, s) {
   const te = todayEntry(s);
@@ -799,7 +855,7 @@ document.addEventListener("click", e => {
   if (draft) { const b = e.target.closest("[data-ed]"); if (b) onEditorClick(b); return; }
 
   const p = e.target.closest("[data-prog]");
-  if (p) { S.settings.prog = p.dataset.prog; curWeek = null; save("settings", S.settings, true); showWorkout(); haptic(); return; }
+  if (p) { openKey = null; S.settings.prog = p.dataset.prog; curWeek = null; save("settings", S.settings, true); showWorkout(); haptic(); return; }
   if (e.target.closest("[data-edit]")) return openEditor(prog());
   if (e.target.closest("[data-new]")) return openEditor(null);
   if (e.target.closest("[data-timer]")) {
@@ -813,11 +869,12 @@ document.addEventListener("click", e => {
     saveMeta(pr); curWeek = nowWeek(pr); pickWeekDay(); renderHeader(); renderMain(); haptic("ok"); return;
   }
   const wk = e.target.closest("[data-week]");
-  if (wk) { curWeek = +wk.dataset.week; pickWeekDay(); renderHeader(); renderMain(); haptic(); return; }
+  if (wk) { openKey = null; curWeek = +wk.dataset.week; pickWeekDay(); renderHeader(); renderMain(); haptic(); return; }
   const d = e.target.closest("[data-day]");
-  if (d) { curDay = +d.dataset.day; renderHeader(); renderMain(); window.scrollTo(0, 0); haptic(); return; }
+  if (d) { openKey = null; curDay = +d.dataset.day; renderHeader(); renderMain(); window.scrollTo(0, 0); haptic(); return; }
 
   const card = e.target.closest(".ex"); if (!card) return;
+  if (e.target.closest("[data-toggle]") && !e.target.closest(".chk")) return toggleCard(card.dataset.id);
   const ex = exOf(card), s = st(ex.key);
   if (e.target.closest("[data-rest]")) { startTimer(parseRest(ex.rest), ex.name); haptic(); return; }
   const act = e.target.closest("[data-act]");
@@ -836,6 +893,10 @@ document.addEventListener("click", e => {
   }
   const up = e.target.closest("[data-up]");
   if (up) { s.w = +up.dataset.up; persist(ex.key, true); rerenderCard(card); haptic("ok"); }
+});
+
+document.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-toggle]")) { e.preventDefault(); toggleCard(e.target.closest(".ex").dataset.id); }
 });
 
 let blurTimer = null;
