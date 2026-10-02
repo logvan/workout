@@ -108,34 +108,69 @@ body.timing main{padding-bottom:110px}
 .bwrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border-radius:14px;padding:10px 12px 10px 14px;margin-bottom:10px}
 .bwrow b{display:block;font-size:14px;font-weight:600}
 .bwrow small{display:block;font-size:12px;color:var(--hint)}
-.dash .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.tile{background:var(--card);border-radius:14px;padding:12px 14px}
-.tile small{display:block;font-size:12px;color:var(--hint)}
-.tile b{display:block;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+
+/* верхняя строка: недели + две кнопки */
+.weeks{gap:8px}
+.wseg{flex:1;min-width:0;display:flex;gap:3px;background:var(--card);border-radius:12px;padding:3px}
+.ws{flex:1;min-width:0;border:0;background:transparent;border-radius:9px;height:34px;font-size:14px;font-weight:600;color:var(--hint);display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.ws[data-week="0"]{--c:var(--accent)} .ws[data-week="1"]{--c:var(--w2)}
+.ws.on{background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--c)}
+.ws.now::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
+.ptitle{flex:1;padding:0 10px;font-weight:700;line-height:34px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ibtn{width:40px;height:40px;flex:none;border:0;border-radius:12px;background:var(--card);color:var(--accent);display:grid;place-items:center}
+.ibtn svg{width:21px;height:21px}
+/* меню снизу */
+#sheet{position:fixed;inset:0;z-index:20}
+.sh-bg{position:absolute;inset:0;background:rgba(0,0,0,.45);animation:fade .15s}
+.sh{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:18px 18px 0 0;padding:8px 12px calc(12px + env(safe-area-inset-bottom, 0px));max-width:560px;margin:0 auto;animation:up .2s ease-out}
+.sh::before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 10px}
+.sh-g{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:8px}
+.sh-g button{width:100%;border:0;background:transparent;display:flex;align-items:center;gap:12px;padding:13px 14px;text-align:left;font-size:15px;font-weight:500;border-top:1px solid var(--line)}
+.sh-g button:first-child{border-top:0}
+.sh-g button svg{width:20px;height:20px;color:var(--accent);flex:none}
+.sh-g button span{flex:1;min-width:0}
+.sh-g button small{display:block;font-size:12px;color:var(--hint);font-weight:400}
+.sw-ui{width:42px;height:26px;border-radius:13px;background:var(--line);position:relative;flex:none;transition:.2s}
+.sw-ui::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw-ui.on{background:var(--ok)} .sw-ui.on::after{left:19px}
+.sh-x{width:100%;border:0;border-radius:14px;background:var(--card);padding:13px;font-weight:600;color:var(--accent)}
+@keyframes up{from{transform:translateY(100%)}} @keyframes fade{from{opacity:0}}
+/* статистика */
+.dtop{display:flex;align-items:center;gap:6px;margin:10px 0 12px}
+.dtop h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.01em}
+.dtop .back{border:0;background:transparent;color:var(--accent);font-size:30px;line-height:1;width:32px;height:36px;padding:0 0 4px;margin-left:-6px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.tile{background:var(--card);border-radius:14px;padding:12px 10px;min-width:0}
+.tile b{display:block;font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile small{display:block;font-size:12px;color:var(--hint);margin-top:3px;line-height:1.2}
 .panel{background:var(--card);border-radius:16px;padding:14px;margin-bottom:10px}
-.panel h3{margin:0 0 10px;font-size:16px;font-weight:700}
-.panel .inp{margin-bottom:10px}
-.big{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
-.big small{font-size:13px;font-weight:500;color:var(--hint);margin-left:4px}
+.ph{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.ph h3{margin:0;font-size:17px;font-weight:700}
+.ph span{font-size:12px;color:var(--hint)}
+.seg{display:flex;gap:3px;background:var(--soft);border-radius:10px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:7px 4px;font-size:13px;font-weight:600;color:var(--hint)}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.sel{position:relative;margin-bottom:12px}
+.sel select{width:100%;appearance:none;-webkit-appearance:none;border:0;background:var(--soft);border-radius:10px;padding:11px 36px 11px 12px;font-weight:600;font-size:15px}
+.sel::after{content:"";position:absolute;right:14px;top:50%;width:8px;height:8px;border-right:2px solid var(--hint);border-bottom:2px solid var(--hint);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.st3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.st3 div{background:var(--soft);border-radius:10px;padding:8px 10px;min-width:0}
+.st3 small{display:block;font-size:11px;color:var(--hint)}
+.st3 b{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.st3 i{font-style:normal;font-size:12px;color:var(--hint);margin-left:2px}
+.st3 em{display:block;font-style:normal;font-size:11px;color:var(--hint)}
+.st3 .pos{color:var(--ok)} .st3 .neg{color:#e5484d}
 .muted{color:var(--hint);font-size:13px;margin:6px 0 0}
-.muted b{color:var(--text)}
-.chart{width:100%;height:auto;display:block;margin-top:8px}
+.empty2{color:var(--hint);font-size:14px;text-align:center;padding:18px 8px}
+.chart{width:100%;height:auto;display:block;margin-top:10px}
 .chart text{fill:var(--hint);font-size:10px;font-family:inherit}
 .chart .gr{stroke:var(--line);stroke-width:1}
 .chart .ln{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
 .chart .ar{fill:color-mix(in srgb,var(--accent) 14%,transparent)}
 .chart .dot{fill:var(--accent)}
 .chart .dot.last{stroke:var(--card);stroke-width:2}
-.chart .bar{fill:color-mix(in srgb,var(--accent) 40%,transparent)}
-.chart .bar.cur{fill:var(--accent)}
-.rec{list-style:none;margin:0;padding:0;font-size:14px}
-.rec li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
-.rec li:first-child{border-top:0}
-.rec li span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rec li span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
-.rec em{font-style:normal;font-weight:600;margin-left:4px}
-.rec .pos{color:var(--ok)} .rec .neg{color:#e5484d}
-.weeks{overflow-x:auto;scrollbar-width:none;margin:0 -12px 8px;padding:0 12px}
+.chart .bx{fill:color-mix(in srgb,var(--accent) 40%,transparent)}
+.chart .bx.cur{fill:var(--accent)}
 .weeks::-webkit-scrollbar{display:none}
 .wk{flex:none;white-space:nowrap}
 .wk.ico{width:32px;justify-content:center;padding:5px 0}
@@ -255,6 +290,7 @@ summary::-webkit-details-marker{display:none}
   <div class="days" id="days"></div>
 </header>
 <main id="main"><div class="loading">Загружаю данные…</div></main>
+<div id="sheet" hidden></div>
 <div id="tbar" hidden>
   <div class="tb">
     <div class="tb-l"><small id="tbName"></small><b id="tbTime">0:00</b></div>
@@ -384,7 +420,7 @@ function nowWeek(p) {
 /* ---------- Состояние ---------- */
 const S = { settings: { prog: "main", timer: true }, ex: {}, mon: {} };
 const P = {};             // тренировки: {id, name, c, anchor, weeks:[{days, d}]}
-let curDay = null, curWeek = null, openKey = null, dash = false, dashEx = null;
+let curDay = null, curWeek = null, openKey = null;
 let draft = null;         // черновик в редакторе
 
 function hashKey(s) {
@@ -445,11 +481,6 @@ function markTrained(on) {
   else if (!on && has) m.t = m.t.filter(x => x !== day);
   else return;
   save("m_" + k, m, true);
-}
-function allDates() {
-  const out = [];
-  for (const [k, m] of Object.entries(S.mon)) for (const d of m.t || []) out.push(`${k.slice(0, 4)}-${k.slice(4)}-${pad(d)}`);
-  return out.sort();
 }
 function bwSeries() {
   const out = [];
@@ -561,19 +592,27 @@ function tick() {
 /* ---------- Экран тренировки ---------- */
 const $ = id => document.getElementById(id);
 
+const ICON = {
+  chart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>`,
+  dots: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>`,
+  swap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>`,
+  edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`,
+  timer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>`,
+};
+
 function renderHeader() {
   const p = prog(), two = p.weeks.length === 2, nw = nowWeek(p), list = progList();
   document.body.dataset.wc = curWeek + 1;
   $("progs").hidden = list.length < 2;
   $("progs").innerHTML = list.length < 2 ? "" : list.map(x =>
     `<button class="pill${x.id === p.id ? " on" : ""}" data-prog="${x.id}">${esc(x.name)}</button>`).join("");
-  $("weeks").innerHTML = (two ? [0, 1].map(i =>
-      `<button class="wk${i === curWeek ? " on" : ""}${i === nw ? " now" : ""}" data-week="${i}"${i === nw ? ' title="Текущая неделя"' : ""}>Неделя ${i + 1}</button>`).join("") +
-      `<button class="wk ico" data-swap title="Поменять текущую неделю" aria-label="Поменять текущую неделю">⇄</button>` : "") +
-    `<button class="wk ico" data-dash title="Дашборд" aria-label="Дашборд">📊</button>` +
-    `<button class="wk ico" data-edit title="Изменить тренировку" aria-label="Изменить тренировку">✎</button>` +
-    `<button class="wk ico" data-new title="Новая тренировка" aria-label="Новая тренировка">＋</button>` +
-    `<button class="tgl${S.settings.timer ? " on" : ""}" data-timer aria-pressed="${S.settings.timer}" aria-label="Таймер отдыха" title="Таймер отдыха"><span>⏱</span><span class="sw"></span></button>`;
+  $("weeks").innerHTML = `
+    <div class="wseg">${two ? [0, 1].map(i =>
+      `<button class="ws${i === curWeek ? " on" : ""}${i === nw ? " now" : ""}" data-week="${i}"${i === nw ? ' title="Текущая неделя"' : ""}>Неделя ${i + 1}</button>`).join("")
+      : `<span class="ptitle">${esc(p.name)}</span>`}</div>
+    <button class="ibtn" data-dash aria-label="Статистика" title="Статистика">${ICON.chart}</button>
+    <button class="ibtn" data-menu aria-label="Меню" title="Меню">${ICON.dots}</button>`;
   const days = week().days, isNow = curWeek === nw;
   $("days").style.gridTemplateColumns = `repeat(${days.length},1fr)`;
   $("days").innerHTML = days.map(n => {
@@ -774,14 +813,27 @@ function uncomplete(card, ex, s) {
   rerenderCard(card);
 }
 
-/* ---------- Дашборд ---------- */
-function keyNames() {
-  const m = {};
-  Object.values(P).forEach(p => p.weeks.forEach(w => Object.values(w.d).forEach(d => d.ex.forEach(e => {
-    const r = toRT(e); if (!r.cardio) m[r.key] ||= r.name + (r.light ? " (добивка)" : "");
-  }))));
-  return m;
+/* ---------- Меню ---------- */
+function renderSheet() {
+  const p = prog(), two = p.weeks.length === 2, nw = nowWeek(p);
+  $("sheet").innerHTML = `
+    <div class="sh-bg" data-close-sheet></div>
+    <div class="sh" role="dialog" aria-label="Меню">
+      <div class="sh-g">
+        ${two ? `<button data-swap>${ICON.swap}<span>Поменять текущую неделю<small>Сейчас идёт неделя ${nw + 1}</small></span></button>` : ""}
+        <button data-edit>${ICON.edit}<span>Изменить тренировку<small>${esc(p.name)}</small></span></button>
+        <button data-new>${ICON.plus}<span>Новая тренировка</span></button>
+      </div>
+      <div class="sh-g">
+        <button data-timer aria-pressed="${S.settings.timer}">${ICON.timer}<span>Таймер отдыха<small>Кнопка «Старт» в карточках</small></span><i class="sw-ui${S.settings.timer ? " on" : ""}"></i></button>
+      </div>
+      <button class="sh-x" data-close-sheet>Закрыть</button>
+    </div>`;
+  $("sheet").hidden = false;
 }
+const closeSheet = () => { $("sheet").hidden = true; $("sheet").innerHTML = ""; };
+
+/* ---------- Статистика ---------- */
 const signed = v => `${v > 0 ? "+" : v < 0 ? "−" : "±"}${fmtW(Math.abs(Math.round(v * 10) / 10))}`;
 
 function lineSVG(pts, unit) {
@@ -789,7 +841,7 @@ function lineSVG(pts, unit) {
   const W = 320, H = 150, l = 36, r = 12, t = 12, b = 22;
   const vs = pts.map(p => p.v); let mn = Math.min(...vs), mx = Math.max(...vs);
   if (mn === mx) { mn -= 1; mx += 1; }
-  const pd = (mx - mn) * 0.12; mn -= pd; mx += pd;
+  const pd = (mx - mn) * 0.12; mn = Math.floor(mn - pd); mx = Math.ceil(mx + pd);
   const X = i => l + (W - l - r) * i / (pts.length - 1), Y = v => t + (H - t - b) * (1 - (v - mn) / (mx - mn));
   const line = pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join("");
   const area = `${line}L${X(pts.length - 1).toFixed(1)},${H - b}L${l},${H - b}Z`;
@@ -803,64 +855,46 @@ function lineSVG(pts, unit) {
     <text x="${l}" y="${H - 6}">${fmtD(pts[0].d)}</text><text x="${W - r}" y="${H - 6}" text-anchor="end">${fmtD(lp.d)}</text>
   </svg>`;
 }
-function barsSVG(items) {
-  const W = 320, H = 120, t = 16, b = 20, n = items.length, gap = 6;
-  const bw = (W - gap * (n - 1)) / n, mx = Math.max(1, ...items.map(x => x.v));
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Тренировки по неделям">
-    ${items.map((x, i) => { const h = (H - t - b) * x.v / mx, xx = i * (bw + gap), y = H - b - h;
-      return `<rect class="bar${x.cur ? " cur" : ""}" x="${xx.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, x.v ? 2 : 1).toFixed(1)}" rx="3"/>
-        ${x.v ? `<text x="${(xx + bw / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle">${x.v}</text>` : ""}
-        ${i % 3 === 0 || x.cur ? `<text x="${(xx + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">${x.cur ? "эта" : x.label}</text>` : ""}`; }).join("")}
-  </svg>`;
+
+
+let dash = false;
+function allDates() {
+  const out = [];
+  for (const [k, m] of Object.entries(S.mon)) for (const d of m.t || []) out.push(`${k.slice(0, 4)}-${k.slice(4)}-${pad(d)}`);
+  return out.sort();
 }
+const st3 = items => `<div class="st3">${items.map(x => `<div><small>${x.l}</small><b>${x.v}</b>${x.u ? `<i>${x.u}</i>` : ""}${x.s ? `<em class="${x.c || ""}">${x.s}</em>` : ""}</div>`).join("")}</div>`;
 
 function renderDash() {
-  const dates = allDates(), from7 = addDays(TODAY, -6), ym = TODAY.slice(0, 7);
+  const dates = allDates();
   const weeksSet = new Set(dates.map(d => dstr(mondayOf(parseD(d)))));
   let wk = weeksSet.has(THIS_MONDAY) ? THIS_MONDAY : addDays(THIS_MONDAY, -7), streak = 0;
   while (weeksSet.has(wk)) { streak++; wk = addDays(wk, -7); }
-  let ton = 0, cardioM = 0;
-  for (const s of Object.values(S.ex)) for (const e of s.h || []) {
-    if (e.d >= from7 && e.w != null && e.r) ton += e.w * e.r.reduce((a, c) => a + c, 0);
-    if (e.m != null && e.d.slice(0, 7) === ym) cardioM += e.m;
+
+  let body;
+  {
+    const bw = bwSeries();
+    if (bw.length) {
+      const last = bw[bw.length - 1], base = bw.find(x => x.d >= addDays(TODAY, -30)) || bw[0], d30 = last.v - base.v;
+      body = `${st3([
+        { l: "Сейчас", v: fmtW(last.v), u: "кг", s: fmtD(last.d) },
+        { l: "За 30 дней", v: bw.length > 1 ? signed(d30) : "—", u: bw.length > 1 ? "кг" : "", s: `с ${fmtD(base.d)}` },
+        { l: "Мин / макс", v: `${fmtW(Math.min(...bw.map(x => x.v)))}`, u: `/ ${fmtW(Math.max(...bw.map(x => x.v)))}`, s: `${bw.length} записей` },
+      ])}${lineSVG(bw.slice(-60), "кг")}`;
+    } else body = `<p class="empty2">Вписывай вес тела на экране тренировки —<br>здесь появится график.</p>`;
   }
-  const bars = [];
-  for (let i = 11; i >= 0; i--) { const m = addDays(THIS_MONDAY, -7 * i), end = addDays(m, 6); bars.push({ label: fmtD(m), v: dates.filter(d => d >= m && d <= end).length, cur: i === 0 }); }
-
-  const bw = bwSeries(), bwLast = bw[bw.length - 1];
-  const bwBase = bw.find(x => x.d >= addDays(TODAY, -30)) || bw[0];
-
-  const names = keyNames();
-  const exs = Object.entries(S.ex).filter(([k, s]) => names[k] && (s.h || []).some(e => e.w != null)).map(([k, s]) => {
-    const h = s.h.filter(e => e.w != null), first = h[0].w, last = h[h.length - 1].w;
-    return { k, name: names[k], h, first, last, best: Math.max(...h.map(e => e.w)), pct: first ? (last - first) / first * 100 : 0 };
-  }).sort((a, b) => a.name.localeCompare(b.name, "ru"));
-  if (!exs.some(x => x.k === dashEx)) dashEx = exs[0]?.k ?? null;
-  const cur = exs.find(x => x.k === dashEx);
-  const gains = exs.filter(x => x.h.length > 1 && x.last !== x.first).sort((a, b) => b.pct - a.pct).slice(0, 5);
-  const tonTxt = ton >= 1000 ? `${fmtW(Math.round(ton / 100) / 10)} т` : `${Math.round(ton)} кг`;
-  const tile = (v, l) => `<div class="tile"><small>${l}</small><b>${v}</b></div>`;
 
   $("main").innerHTML = `
   <section class="dash">
-    <div class="edtop"><h2>Дашборд</h2><button class="link" data-dash-close>Закрыть</button></div>
-    <div class="tiles">
-      ${tile(dates.length, "Тренировок всего")}${tile((S.mon[monKey(TODAY)]?.t || []).length, "В этом месяце")}
-      ${tile(streak, "Недель подряд")}${tile(tonTxt, "Тоннаж за 7 дней")}
+    <div class="dtop"><button class="back" data-dash-close aria-label="Назад">‹</button><h2>Статистика</h2></div>
+    <div class="panel"><div class="ph"><h3>Прогресс веса</h3><span>вес тела</span></div>
+      ${body}
     </div>
-    <div class="panel"><h3>Тренировки по неделям</h3>${barsSVG(bars)}
-      ${cardioM ? `<p class="muted">Кардио в этом месяце: <b>${cardioM} мин</b></p>` : ""}</div>
-    <div class="panel"><h3>Вес тела</h3>
-      ${bw.length ? `<div class="big">${fmtW(bwLast.v)} кг ${bw.length > 1 ? `<small>${signed(bwLast.v - bwBase.v)} кг с ${fmtD(bwBase.d)}</small>` : ""}</div>${lineSVG(bw.slice(-60), "кг")}`
-        : `<p class="muted">Вписывай вес тела на экране тренировки — здесь появится график.</p>`}</div>
-    <div class="panel"><h3>Прогрессия веса</h3>
-      ${cur ? `<select class="inp" id="dashEx" aria-label="Упражнение">${exs.map(x => `<option value="${x.k}"${x.k === dashEx ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select>
-        <div class="big">${fmtW(cur.last)} кг <small>${cur.h.length > 1 ? `${signed(cur.last - cur.first)} кг с ${fmtD(cur.h[0].d)}` : "первая запись"}</small></div>
-        <p class="muted">Рекорд ${fmtW(cur.best)} кг · записей: ${cur.h.length}</p>
-        ${lineSVG(cur.h.map(e => ({ d: e.d, v: e.w })), "кг")}`
-        : `<p class="muted">Пока нет записей с весом. Отметь пару тренировок — появится график.</p>`}</div>
-    ${gains.length ? `<div class="panel"><h3>Больше всего прибавил</h3><ul class="rec">${gains.map(x =>
-      `<li><span>${esc(x.name)}</span><span>${fmtW(x.first)} → <b>${fmtW(x.last)} кг</b> <em class="${x.pct >= 0 ? "pos" : "neg"}">${signed(Math.round(x.pct))}%</em></span></li>`).join("")}</ul></div>` : ""}
+    <div class="tiles">
+      <div class="tile"><b>${dates.length}</b><small>тренировок всего</small></div>
+      <div class="tile"><b>${(S.mon[monKey(TODAY)]?.t || []).length}</b><small>в этом месяце</small></div>
+      <div class="tile"><b>${streak}</b><small>недель подряд</small></div>
+    </div>
   </section>`;
 }
 function openDash() {
@@ -1086,7 +1120,20 @@ document.addEventListener("click", e => {
     tick(); haptic(); return;
   }
   if (draft) { const b = e.target.closest("[data-ed]"); if (b) onEditorClick(b); return; }
-  if (dash) { if (e.target.closest("[data-dash-close]")) closeDash(); return; }
+  if (dash) {
+    if (e.target.closest("[data-dash-close]")) return closeDash();
+    return;
+  }
+  if (!$("sheet").hidden) {
+    if (e.target.closest("[data-close-sheet]")) return closeSheet();
+    if (e.target.closest("[data-timer]")) {
+      S.settings.timer = !S.settings.timer; save("settings", S.settings, true);
+      if (!S.settings.timer) stopTimer();
+      renderSheet(); renderMain(); haptic(); return;
+    }
+    if (e.target.closest("[data-swap],[data-edit],[data-new]")) closeSheet(); else return;
+  }
+  if (e.target.closest("[data-menu]")) { renderSheet(); haptic(); return; }
   if (e.target.closest("[data-dash]")) return openDash();
 
   const p = e.target.closest("[data-prog]");
@@ -1178,7 +1225,7 @@ document.addEventListener("input", e => {
 });
 
 document.addEventListener("change", e => {
-  if (dash) { if (e.target.id === "dashEx") { dashEx = e.target.value; renderDash(); } return; }
+  if (dash) return;
   if (draft) {
     if (e.target.id === "edTwo") {
       collect();
