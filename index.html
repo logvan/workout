@@ -96,6 +96,45 @@ body.timing main{padding-bottom:110px}
 .rrow label{color:var(--hint);font-size:13px}
 .rstart{border:0;background:var(--soft);color:var(--accent);border-radius:10px;padding:8px 12px;font-weight:600}
 .rtxt{font-size:14px;font-weight:600}
+.npv{margin:4px 0 0;font-size:13px;color:var(--text);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex.open .npv{display:none}
+.note{display:block;margin-top:12px}
+.note span{display:block;font-size:13px;color:var(--hint);margin-bottom:5px}
+.note textarea{width:100%;border:1.5px solid var(--line);background:color-mix(in srgb,#f5c542 7%,transparent);border-radius:10px;padding:8px 10px;resize:vertical;min-height:44px;font-size:14px}
+.note textarea:focus{border-color:var(--accent);outline:none}
+.up.dn{background:color-mix(in srgb,#e5484d 13%,transparent)}
+.up.dn button{background:#e5484d}
+.dnt{color:#e5484d;font-weight:600}
+.bwrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border-radius:14px;padding:10px 12px 10px 14px;margin-bottom:10px}
+.bwrow b{display:block;font-size:14px;font-weight:600}
+.bwrow small{display:block;font-size:12px;color:var(--hint)}
+.dash .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.tile{background:var(--card);border-radius:14px;padding:12px 14px}
+.tile small{display:block;font-size:12px;color:var(--hint)}
+.tile b{display:block;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.panel{background:var(--card);border-radius:16px;padding:14px;margin-bottom:10px}
+.panel h3{margin:0 0 10px;font-size:16px;font-weight:700}
+.panel .inp{margin-bottom:10px}
+.big{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.big small{font-size:13px;font-weight:500;color:var(--hint);margin-left:4px}
+.muted{color:var(--hint);font-size:13px;margin:6px 0 0}
+.muted b{color:var(--text)}
+.chart{width:100%;height:auto;display:block;margin-top:8px}
+.chart text{fill:var(--hint);font-size:10px;font-family:inherit}
+.chart .gr{stroke:var(--line);stroke-width:1}
+.chart .ln{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.chart .ar{fill:color-mix(in srgb,var(--accent) 14%,transparent)}
+.chart .dot{fill:var(--accent)}
+.chart .dot.last{stroke:var(--card);stroke-width:2}
+.chart .bar{fill:color-mix(in srgb,var(--accent) 40%,transparent)}
+.chart .bar.cur{fill:var(--accent)}
+.rec{list-style:none;margin:0;padding:0;font-size:14px}
+.rec li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.rec li:first-child{border-top:0}
+.rec li span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec li span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+.rec em{font-style:normal;font-weight:600;margin-left:4px}
+.rec .pos{color:var(--ok)} .rec .neg{color:#e5484d}
 .weeks{overflow-x:auto;scrollbar-width:none;margin:0 -12px 8px;padding:0 12px}
 .weeks::-webkit-scrollbar{display:none}
 .wk{flex:none;white-space:nowrap}
@@ -343,9 +382,9 @@ function nowWeek(p) {
 }
 
 /* ---------- Состояние ---------- */
-const S = { settings: { prog: "main", timer: true }, ex: {} };
+const S = { settings: { prog: "main", timer: true }, ex: {}, mon: {} };
 const P = {};             // тренировки: {id, name, c, anchor, weeks:[{days, d}]}
-let curDay = null, curWeek = null, openKey = null;
+let curDay = null, curWeek = null, openKey = null, dash = false, dashEx = null;
 let draft = null;         // черновик в редакторе
 
 function hashKey(s) {
@@ -396,10 +435,66 @@ function suggestion(ex, s) {
   return Math.max(s.w + ex.step, Math.round(s.w * 1.05 / ex.step) * ex.step);
 }
 
+/* ---------- Журнал по месяцам: дни тренировок и вес тела ---------- */
+const monKey = d => d.slice(0, 4) + d.slice(5, 7);
+const mon = k => (S.mon[k] ||= { t: [], bw: {} });
+const addDays = (d, n) => { const x = parseD(d); x.setDate(x.getDate() + n); return dstr(x); };
+function markTrained(on) {
+  const k = monKey(TODAY), m = mon(k), day = +TODAY.slice(8), has = m.t.includes(day);
+  if (on && !has) { m.t.push(day); m.t.sort((a, b) => a - b); }
+  else if (!on && has) m.t = m.t.filter(x => x !== day);
+  else return;
+  save("m_" + k, m, true);
+}
+function allDates() {
+  const out = [];
+  for (const [k, m] of Object.entries(S.mon)) for (const d of m.t || []) out.push(`${k.slice(0, 4)}-${k.slice(4)}-${pad(d)}`);
+  return out.sort();
+}
+function bwSeries() {
+  const out = [];
+  for (const [k, m] of Object.entries(S.mon)) for (const [d, w] of Object.entries(m.bw || {})) out.push({ d: `${k.slice(0, 4)}-${k.slice(4)}-${pad(+d)}`, v: w });
+  return out.sort((a, b) => a.d < b.d ? -1 : 1);
+}
+// подсказка «снизить вес», если в прошлый раз не выполнены все подходы или повторы
+function downHint(ex, s) {
+  if (ex.cardio || ex.light || todayEntry(s)) return null;
+  const pe = prevEntry(s); if (!pe || !pe.r) return null;
+  const [minS] = ex.sets, [minR] = ex.reps;
+  if (!(pe.r.length < minS || pe.r.some(x => x < minR))) return null;
+  if (pe.w != null && s.w != null && s.w !== pe.w) return null;   // вес уже поменял
+  const to = pe.w != null ? Math.max(0, Math.min(pe.w - ex.step, Math.round(pe.w * 0.95 / ex.step) * ex.step)) : null;
+  return { r: pe.r, to };
+}
+
 /* ---------- Таймер отдыха ---------- */
-let T = null, tInt = null, actx = null;
-function audio() { try { actx ||= new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) {} }
-function beep() {
+let T = null, tInt = null, actx = null, snd = null, wake = null;
+// звук — WAV-файл, проигрываемый как медиа: на iPhone медиа обычно звучит и в беззвучном режиме
+function beepWav() {
+  const sr = 22050, n = Math.floor(sr * 0.75), buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const w = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) {
+    const t = i / sr, ph = t % 0.25, on = ph < 0.18;
+    const env = on ? Math.min(1, ph / 0.01, (0.18 - ph) / 0.02) : 0;
+    v.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * 880 * t) * env * 0.9 * 32767), true);
+  }
+  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+}
+// вызывается по нажатию «Старт»: браузер разрешает звук только после действия пользователя
+function audio() {
+  try {
+    if (!snd) { snd = new Audio(beepWav()); snd.preload = "auto"; snd.setAttribute("playsinline", ""); }
+    snd.muted = true;
+    const p = snd.play();
+    if (p) p.then(() => { snd.pause(); snd.currentTime = 0; snd.muted = false; }).catch(() => {});
+  } catch (e) {}
+  try { actx ||= new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) {}
+}
+function webBeep() {
   try {
     const t = actx.currentTime;
     [0, 0.25, 0.5].forEach(o => {
@@ -412,13 +507,31 @@ function beep() {
     });
   } catch (e) {}
 }
+function beep() {
+  try {
+    if (!snd) return webBeep();
+    snd.muted = false; snd.currentTime = 0;
+    const p = snd.play(); if (p) p.catch(webBeep);
+  } catch (e) { webBeep(); }
+}
+// не даём экрану погаснуть, пока идёт отдых
+async function keepAwake(on) {
+  try {
+    if (on && !wake && navigator.wakeLock) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); }
+    if (!on && wake) { const w = wake; wake = null; await w.release(); }
+  } catch (e) {}
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && T) { if (!T.fin) keepAwake(true); tick(); }
+});
 function startTimer(sec, label) {
   audio();
+  keepAwake(true);
   T = { end: Date.now() + sec * 1000, total: sec, label, fin: false };
   clearInterval(tInt); tInt = setInterval(tick, 250); tick();
 }
 function stopTimer() {
-  T = null; clearInterval(tInt);
+  T = null; clearInterval(tInt); keepAwake(false);
   $("tbar").hidden = true; $("tbar").classList.remove("fin"); document.body.classList.remove("timing");
 }
 function tick() {
@@ -457,6 +570,7 @@ function renderHeader() {
   $("weeks").innerHTML = (two ? [0, 1].map(i =>
       `<button class="wk${i === curWeek ? " on" : ""}${i === nw ? " now" : ""}" data-week="${i}"${i === nw ? ' title="Текущая неделя"' : ""}>Неделя ${i + 1}</button>`).join("") +
       `<button class="wk ico" data-swap title="Поменять текущую неделю" aria-label="Поменять текущую неделю">⇄</button>` : "") +
+    `<button class="wk ico" data-dash title="Дашборд" aria-label="Дашборд">📊</button>` +
     `<button class="wk ico" data-edit title="Изменить тренировку" aria-label="Изменить тренировку">✎</button>` +
     `<button class="wk ico" data-new title="Новая тренировка" aria-label="Новая тренировка">＋</button>` +
     `<button class="tgl${S.settings.timer ? " on" : ""}" data-timer aria-pressed="${S.settings.timer}" aria-label="Таймер отдыха" title="Таймер отдыха"><span>⏱</span><span class="sw"></span></button>`;
@@ -480,11 +594,11 @@ const checkHTML = done => `<label class="chk" title="Выполнил"><input ty
 const CHEV = `<svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 // шапка карточки: всегда видна; по нажатию раскрывается тело
-function headHTML(ex, title, summary, done) {
+function headHTML(ex, title, summary, done, note) {
   const open = openKey === ex.key;
   return `
     <div class="hd" data-toggle role="button" tabindex="0" aria-expanded="${open}">
-      <div class="nm"><h3>${title}</h3><p class="sum">${summary}</p></div>
+      <div class="nm"><h3>${title}</h3><p class="sum">${summary}</p>${note ? `<p class="npv">📝 ${esc(note)}</p>` : ""}</div>
       ${checkHTML(done)}
       ${CHEV}
     </div>`;
@@ -496,7 +610,7 @@ function cardioHTML(ex) {
   const summary = te ? `<b>✓ ${te.m} мин</b>` : `Цель ${ex.min} мин`;
   return `
   <article class="ex cardio${te ? " done" : ""}${openKey === ex.key ? " open" : ""}" data-id="${ex.key}">
-    ${headHTML(ex, `${esc(ex.name)}<span class="tag c">кардио</span>`, summary, te)}
+    ${headHTML(ex, `${esc(ex.name)}<span class="tag c">кардио</span>`, summary, te, s.note)}
     <div class="bd">
       <div class="wrow">
         <label>Минуты</label>
@@ -508,6 +622,8 @@ function cardioHTML(ex) {
         </div>
       </div>
       <div class="last">${pe ? `Прошлый раз ${fmtD(pe.d)}: <b>${pe.m} мин</b>` : "Прошлых записей нет"}</div>
+      <label class="note"><span>Заметка к следующему разу${s.note && s.noteD && s.noteD !== TODAY ? ` · от ${fmtD(s.noteD)}` : ""}</span>
+        <textarea class="nt" rows="2" maxlength="300" placeholder="Например: сиденье на 4, хват шире, в конце тяжело">${esc(s.note || "")}</textarea></label>
       ${historyHTML(s, ex)}
     </div>
   </article>`;
@@ -523,17 +639,17 @@ function cardHTML(ex) {
     const cls = ["set", i >= minS && "opt", v !== "" && (v >= maxR ? "hit" : v < minR ? "miss" : "")].filter(Boolean).join(" ");
     return `<input class="${cls}" data-i="${i}" type="number" inputmode="numeric" min="0" placeholder="${maxR}" value="${v}" aria-label="Подход ${i + 1}, повторения">`;
   }).join("");
-  const sug = suggestion(ex, s);
+  const sug = suggestion(ex, s), dh = sug ? null : downHint(ex, s);
   const filled = reps.filter(v => v !== "" && v != null).length;
   const summary = te
     ? `<b>✓ ${te.w != null ? fmtW(te.w) + " кг · " : ""}${te.r.join("/")}</b>`
-    : `${fmtR(ex.sets)} × ${fmtR(ex.reps)}${s.w != null ? ` · ${fmtW(s.w)} кг` : ""}${filled ? ` · ${filled}/${minS} подх.` : ""}${sug ? ` · <span class="upt">↑ вес</span>` : ""}`;
+    : `${fmtR(ex.sets)} × ${fmtR(ex.reps)}${s.w != null ? ` · ${fmtW(s.w)} кг` : ""}${filled ? ` · ${filled}/${minS} подх.` : ""}${sug ? ` · <span class="upt">↑ вес</span>` : ""}${dh ? ` · <span class="dnt">↓ вес</span>` : ""}`;
   const rest = S.settings.timer
     ? `<button class="rstart" data-rest>⏱ Старт ${esc(ex.rest)}</button>`
     : `<span class="rtxt">${esc(ex.rest)}</span>`;
   return `
   <article class="ex${te ? " done" : ""}${ex.light ? " light" : ""}${openKey === ex.key ? " open" : ""}" data-id="${ex.key}">
-    ${headHTML(ex, `${esc(ex.name)}${ex.light ? '<span class="tag">добивка</span>' : ""}`, summary, te)}
+    ${headHTML(ex, `${esc(ex.name)}${ex.light ? '<span class="tag">добивка</span>' : ""}`, summary, te, s.note)}
     <div class="bd">
       <div class="wrow">
         <label>Рабочий вес</label>
@@ -553,6 +669,9 @@ function cardHTML(ex) {
       <div class="rrow"><label>Отдых</label>${rest}</div>
       <div class="last">${pe ? `Прошлый раз ${fmtD(pe.d)}: ${pe.w != null ? `<b>${fmtW(pe.w)} кг</b>, ` : ""}${pe.r.join(" / ")}${pe.wu != null ? ` · разминка ${fmtW(pe.wu)} кг` : ""}` : "Прошлых записей нет — введи вес и отметь подходы"}</div>
       ${sug ? `<div class="up">Два раза подряд закрыл ${maxR} повторов<button data-up="${sug}">Поставить ${fmtW(sug)} кг</button></div>` : ""}
+      ${dh ? `<div class="up dn">В прошлый раз не всё получилось: ${dh.r.join(" / ")} из ${fmtR(ex.sets)} × ${fmtR(ex.reps)}. Попробуй снизить вес${dh.to != null ? `<button data-up="${dh.to}">Поставить ${fmtW(dh.to)} кг</button>` : ""}</div>` : ""}
+      <label class="note"><span>Заметка к следующему разу${s.note && s.noteD && s.noteD !== TODAY ? ` · от ${fmtD(s.noteD)}` : ""}</span>
+        <textarea class="nt" rows="2" maxlength="300" placeholder="Например: сиденье на 4, хват шире, в конце тяжело">${esc(s.note || "")}</textarea></label>
       ${historyHTML(s, ex)}
     </div>
   </article>`;
@@ -581,8 +700,19 @@ function renderMain() {
   $("main").innerHTML = `
     <div class="dayhead"><h1>${esc(day.title)}</h1><span>${i.html}</span></div>
     <div class="bar"><i style="width:${i.tot ? i.dn / i.tot * 100 : 0}%"></i></div>
+    ${bwHTML()}
     ${list.map(cardHTML).join("")}
     <p class="foot">${cloud ? "Данные сохраняются в облаке Telegram" : "Данные сохраняются в этом браузере"}</p>`;
+}
+
+function bwHTML() {
+  const today = S.mon[monKey(TODAY)]?.bw?.[+TODAY.slice(8)];
+  const prev = bwSeries().filter(x => x.d !== TODAY).pop();
+  return `
+    <div class="bwrow">
+      <div><b>Вес тела</b><small>${prev ? `прошлый: ${fmtW(prev.v)} кг · ${fmtD(prev.d)}` : "впиши, чтобы видеть динамику"}</small></div>
+      <div class="wubox"><input class="bw" inputmode="decimal" placeholder="${prev ? fmtW(prev.v) : "—"}" value="${today != null ? fmtW(today) : ""}" aria-label="Вес тела сегодня, кг"><span>кг</span></div>
+    </div>`;
 }
 
 function showWorkout() { pickWeekDay(); $("hdr").hidden = false; renderHeader(); renderMain(); }
@@ -609,18 +739,20 @@ function complete(card, ex, s) {
   } else {
     const [minS, maxS] = ex.sets, [minR, maxR] = ex.reps;
     const fill = minR === maxR ? maxR : minR;   // пустые обязательные подходы = по плану
-    const vals = readSets(card), r = [];
+    const vals = readSets(card), r = [], any = vals.some(v => v != null);
     for (let i = 0; i < maxS; i++) {
       if (vals[i] != null) r.push(vals[i]);
-      else if (i < minS) r.push(fill);
+      else if (!any && i < minS) r.push(fill);   // ничего не вписано — значит сделал по плану
     }
     entry = { d: TODAY, w: s.w, r };
     if (s.wu != null) entry.wu = s.wu;
   }
   s.h = s.h.filter(x => x.d !== TODAY);
   s.h.push(entry);
-  s.h = s.h.slice(-12);
+  s.h = s.h.slice(-80);
+  while (JSON.stringify(s).length > 3800 && s.h.length > 5) s.h.shift();
   s.dr = null;
+  markTrained(true);
   haptic("ok");
   persist(ex.key, true);
   if (openKey === ex.key) {
@@ -636,9 +768,110 @@ function uncomplete(card, ex, s) {
   const te = todayEntry(s);
   if (te && !ex.cardio) s.dr = { d: TODAY, r: te.r };
   s.h = s.h.filter(x => x.d !== TODAY);
+  if (!Object.values(S.ex).some(x => x.h && todayEntry(x))) markTrained(false);
   haptic();
   persist(ex.key, true);
   rerenderCard(card);
+}
+
+/* ---------- Дашборд ---------- */
+function keyNames() {
+  const m = {};
+  Object.values(P).forEach(p => p.weeks.forEach(w => Object.values(w.d).forEach(d => d.ex.forEach(e => {
+    const r = toRT(e); if (!r.cardio) m[r.key] ||= r.name + (r.light ? " (добивка)" : "");
+  }))));
+  return m;
+}
+const signed = v => `${v > 0 ? "+" : v < 0 ? "−" : "±"}${fmtW(Math.abs(Math.round(v * 10) / 10))}`;
+
+function lineSVG(pts, unit) {
+  if (pts.length < 2) return `<p class="muted">Нужно хотя бы две записи, чтобы построить график</p>`;
+  const W = 320, H = 150, l = 36, r = 12, t = 12, b = 22;
+  const vs = pts.map(p => p.v); let mn = Math.min(...vs), mx = Math.max(...vs);
+  if (mn === mx) { mn -= 1; mx += 1; }
+  const pd = (mx - mn) * 0.12; mn -= pd; mx += pd;
+  const X = i => l + (W - l - r) * i / (pts.length - 1), Y = v => t + (H - t - b) * (1 - (v - mn) / (mx - mn));
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join("");
+  const area = `${line}L${X(pts.length - 1).toFixed(1)},${H - b}L${l},${H - b}Z`;
+  const grid = [0, 0.5, 1].map(f => { const v = mn + (mx - mn) * f, y = Y(v).toFixed(1);
+    return `<line class="gr" x1="${l}" x2="${W - r}" y1="${y}" y2="${y}"/><text x="${l - 6}" y="${+y + 3}" text-anchor="end">${fmtW(Math.round(v * 10) / 10)}</text>`; }).join("");
+  const lp = pts[pts.length - 1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="График, последнее значение ${fmtW(lp.v)} ${unit}">
+    ${grid}<path class="ar" d="${area}"/><path class="ln" d="${line}"/>
+    ${pts.length <= 30 ? pts.map((p, i) => `<circle class="dot" cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="2.5"/>`).join("") : ""}
+    <circle class="dot last" cx="${X(pts.length - 1).toFixed(1)}" cy="${Y(lp.v).toFixed(1)}" r="4"/>
+    <text x="${l}" y="${H - 6}">${fmtD(pts[0].d)}</text><text x="${W - r}" y="${H - 6}" text-anchor="end">${fmtD(lp.d)}</text>
+  </svg>`;
+}
+function barsSVG(items) {
+  const W = 320, H = 120, t = 16, b = 20, n = items.length, gap = 6;
+  const bw = (W - gap * (n - 1)) / n, mx = Math.max(1, ...items.map(x => x.v));
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Тренировки по неделям">
+    ${items.map((x, i) => { const h = (H - t - b) * x.v / mx, xx = i * (bw + gap), y = H - b - h;
+      return `<rect class="bar${x.cur ? " cur" : ""}" x="${xx.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, x.v ? 2 : 1).toFixed(1)}" rx="3"/>
+        ${x.v ? `<text x="${(xx + bw / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle">${x.v}</text>` : ""}
+        ${i % 3 === 0 || x.cur ? `<text x="${(xx + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">${x.cur ? "эта" : x.label}</text>` : ""}`; }).join("")}
+  </svg>`;
+}
+
+function renderDash() {
+  const dates = allDates(), from7 = addDays(TODAY, -6), ym = TODAY.slice(0, 7);
+  const weeksSet = new Set(dates.map(d => dstr(mondayOf(parseD(d)))));
+  let wk = weeksSet.has(THIS_MONDAY) ? THIS_MONDAY : addDays(THIS_MONDAY, -7), streak = 0;
+  while (weeksSet.has(wk)) { streak++; wk = addDays(wk, -7); }
+  let ton = 0, cardioM = 0;
+  for (const s of Object.values(S.ex)) for (const e of s.h || []) {
+    if (e.d >= from7 && e.w != null && e.r) ton += e.w * e.r.reduce((a, c) => a + c, 0);
+    if (e.m != null && e.d.slice(0, 7) === ym) cardioM += e.m;
+  }
+  const bars = [];
+  for (let i = 11; i >= 0; i--) { const m = addDays(THIS_MONDAY, -7 * i), end = addDays(m, 6); bars.push({ label: fmtD(m), v: dates.filter(d => d >= m && d <= end).length, cur: i === 0 }); }
+
+  const bw = bwSeries(), bwLast = bw[bw.length - 1];
+  const bwBase = bw.find(x => x.d >= addDays(TODAY, -30)) || bw[0];
+
+  const names = keyNames();
+  const exs = Object.entries(S.ex).filter(([k, s]) => names[k] && (s.h || []).some(e => e.w != null)).map(([k, s]) => {
+    const h = s.h.filter(e => e.w != null), first = h[0].w, last = h[h.length - 1].w;
+    return { k, name: names[k], h, first, last, best: Math.max(...h.map(e => e.w)), pct: first ? (last - first) / first * 100 : 0 };
+  }).sort((a, b) => a.name.localeCompare(b.name, "ru"));
+  if (!exs.some(x => x.k === dashEx)) dashEx = exs[0]?.k ?? null;
+  const cur = exs.find(x => x.k === dashEx);
+  const gains = exs.filter(x => x.h.length > 1 && x.last !== x.first).sort((a, b) => b.pct - a.pct).slice(0, 5);
+  const tonTxt = ton >= 1000 ? `${fmtW(Math.round(ton / 100) / 10)} т` : `${Math.round(ton)} кг`;
+  const tile = (v, l) => `<div class="tile"><small>${l}</small><b>${v}</b></div>`;
+
+  $("main").innerHTML = `
+  <section class="dash">
+    <div class="edtop"><h2>Дашборд</h2><button class="link" data-dash-close>Закрыть</button></div>
+    <div class="tiles">
+      ${tile(dates.length, "Тренировок всего")}${tile((S.mon[monKey(TODAY)]?.t || []).length, "В этом месяце")}
+      ${tile(streak, "Недель подряд")}${tile(tonTxt, "Тоннаж за 7 дней")}
+    </div>
+    <div class="panel"><h3>Тренировки по неделям</h3>${barsSVG(bars)}
+      ${cardioM ? `<p class="muted">Кардио в этом месяце: <b>${cardioM} мин</b></p>` : ""}</div>
+    <div class="panel"><h3>Вес тела</h3>
+      ${bw.length ? `<div class="big">${fmtW(bwLast.v)} кг ${bw.length > 1 ? `<small>${signed(bwLast.v - bwBase.v)} кг с ${fmtD(bwBase.d)}</small>` : ""}</div>${lineSVG(bw.slice(-60), "кг")}`
+        : `<p class="muted">Вписывай вес тела на экране тренировки — здесь появится график.</p>`}</div>
+    <div class="panel"><h3>Прогрессия веса</h3>
+      ${cur ? `<select class="inp" id="dashEx" aria-label="Упражнение">${exs.map(x => `<option value="${x.k}"${x.k === dashEx ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select>
+        <div class="big">${fmtW(cur.last)} кг <small>${cur.h.length > 1 ? `${signed(cur.last - cur.first)} кг с ${fmtD(cur.h[0].d)}` : "первая запись"}</small></div>
+        <p class="muted">Рекорд ${fmtW(cur.best)} кг · записей: ${cur.h.length}</p>
+        ${lineSVG(cur.h.map(e => ({ d: e.d, v: e.w })), "кг")}`
+        : `<p class="muted">Пока нет записей с весом. Отметь пару тренировок — появится график.</p>`}</div>
+    ${gains.length ? `<div class="panel"><h3>Больше всего прибавил</h3><ul class="rec">${gains.map(x =>
+      `<li><span>${esc(x.name)}</span><span>${fmtW(x.first)} → <b>${fmtW(x.last)} кг</b> <em class="${x.pct >= 0 ? "pos" : "neg"}">${signed(Math.round(x.pct))}%</em></span></li>`).join("")}</ul></div>` : ""}
+  </section>`;
+}
+function openDash() {
+  dash = true; $("hdr").hidden = true;
+  if (inTg && tg.BackButton) { tg.BackButton.onClick(closeDash); tg.BackButton.show(); }
+  renderDash(); window.scrollTo(0, 0); haptic();
+}
+function closeDash() {
+  dash = false;
+  if (inTg && tg.BackButton) { tg.BackButton.offClick(closeDash); tg.BackButton.hide(); }
+  showWorkout(); window.scrollTo(0, 0);
 }
 
 /* ---------- Редактор тренировки ---------- */
@@ -853,6 +1086,8 @@ document.addEventListener("click", e => {
     tick(); haptic(); return;
   }
   if (draft) { const b = e.target.closest("[data-ed]"); if (b) onEditorClick(b); return; }
+  if (dash) { if (e.target.closest("[data-dash-close]")) closeDash(); return; }
+  if (e.target.closest("[data-dash]")) return openDash();
 
   const p = e.target.closest("[data-prog]");
   if (p) { openKey = null; S.settings.prog = p.dataset.prog; curWeek = null; save("settings", S.settings, true); showWorkout(); haptic(); return; }
@@ -901,7 +1136,13 @@ document.addEventListener("keydown", e => {
 
 let blurTimer = null;
 document.addEventListener("input", e => {
-  if (draft) return;
+  if (draft || dash) return;
+  if (e.target.classList.contains("bw")) {
+    const k = monKey(TODAY), m = mon(k), v = num(e.target.value), day = +TODAY.slice(8);
+    if (v == null) delete m.bw[day]; else m.bw[day] = v;
+    save("m_" + k, m);
+    return;
+  }
   const card = e.target.closest(".ex"); if (!card) return;
   const ex = exOf(card), s = st(ex.key), te = todayEntry(s), cl = e.target.classList;
   if (cl.contains("set")) {
@@ -924,6 +1165,10 @@ document.addEventListener("input", e => {
     s.wu = num(e.target.value);
     if (te) { if (s.wu != null) te.wu = s.wu; else delete te.wu; }
     persist(ex.key);
+  } else if (cl.contains("nt")) {
+    const v = e.target.value.slice(0, 300);
+    if (v.trim()) { s.note = v; s.noteD = TODAY; } else { delete s.note; delete s.noteD; }
+    persist(ex.key);
   } else if (cl.contains("mn")) {
     const v = parseInt(e.target.value, 10);
     s.m = isNaN(v) ? null : v;
@@ -933,6 +1178,7 @@ document.addEventListener("input", e => {
 });
 
 document.addEventListener("change", e => {
+  if (dash) { if (e.target.id === "dashEx") { dashEx = e.target.value; renderDash(); } return; }
   if (draft) {
     if (e.target.id === "edTwo") {
       collect();
@@ -971,6 +1217,7 @@ document.addEventListener("change", e => {
     const o = J(v); if (!o) continue;
     if (k === "settings") Object.assign(S.settings, o);
     else if (k.startsWith("h_")) S.ex[k] = o;
+    else if (k.startsWith("m_")) S.mon[k.slice(2)] = o;
     else if (k.startsWith("ex_")) legacy.push([k, o]);
     else if (k.startsWith("p_")) {
       const id = k.slice(2);
@@ -1011,6 +1258,15 @@ document.addEventListener("change", e => {
     if (!S.ex[key]) { S.ex[key] = o; save(key, o, true); }
   }
   if (legacy.length) store.remove(legacy.map(([k]) => k));
+
+  // дни тренировок из уже записанной истории
+  const dirty = new Set();
+  Object.values(S.ex).forEach(x => (x.h || []).forEach(e => {
+    const k = monKey(e.d), m = mon(k), day = +e.d.slice(8);
+    m.bw ||= {}; m.t ||= [];
+    if (!m.t.includes(day)) { m.t.push(day); m.t.sort((a, b) => a - b); dirty.add(k); }
+  }));
+  dirty.forEach(k => save("m_" + k, S.mon[k], true));
 
   if (!P[S.settings.prog]) S.settings.prog = progList()[0].id;
   refreshNames();
