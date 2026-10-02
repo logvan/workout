@@ -19,6 +19,8 @@
   --ok: #27ae60;
   --up: #e8912d;
   --w2: #8b5cf6;
+  --plus: var(--ok);
+  --minus: #e5484d;
   --line: color-mix(in srgb, var(--hint) 22%, transparent);
   --soft: color-mix(in srgb, var(--hint) 12%, transparent);
   box-sizing: border-box;
@@ -102,9 +104,9 @@ body.timing main{padding-bottom:110px}
 .note span{display:block;font-size:13px;color:var(--hint);margin-bottom:5px}
 .note textarea{width:100%;border:1.5px solid var(--line);background:color-mix(in srgb,#f5c542 7%,transparent);border-radius:10px;padding:8px 10px;resize:vertical;min-height:44px;font-size:14px}
 .note textarea:focus{border-color:var(--accent);outline:none}
-.up.dn{background:color-mix(in srgb,#e5484d 13%,transparent)}
-.up.dn button{background:#e5484d}
-.dnt{color:#e5484d;font-weight:600}
+.up.dn{background:color-mix(in srgb,var(--minus) 13%,transparent)}
+.up.dn button{background:var(--minus)}
+.dnt{color:var(--minus);font-weight:600}
 .bwrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border-radius:14px;padding:10px 12px 10px 14px;margin-bottom:10px}
 .bwrow b{display:block;font-size:14px;font-weight:600}
 .bwrow small{display:block;font-size:12px;color:var(--hint)}
@@ -159,8 +161,20 @@ body.timing main{padding-bottom:110px}
 .st3 b{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
 .st3 i{font-style:normal;font-size:12px;color:var(--hint);margin-left:2px}
 .st3 em{display:block;font-style:normal;font-size:11px;color:var(--hint)}
-.st3 .pos{color:var(--ok)} .st3 .neg{color:#e5484d}
+.pos{color:var(--plus)!important} .neg{color:var(--minus)!important}
 .muted{color:var(--hint);font-size:13px;margin:6px 0 0}
+.bwadd{display:flex;gap:6px;margin-top:14px;align-items:center}
+.bwadd .inp{flex:1.4;min-width:0;padding:8px 10px;height:40px}
+.bwadd input[type=date]{color-scheme:light dark}
+.bwadd .wubox{flex:1;height:40px}
+.bwadd .wubox input{width:100%}
+.bwadd .btn{padding:0 14px;height:40px;flex:none}
+.bwl{list-style:none;margin:10px 0 0;padding:0;font-size:14px;font-variant-numeric:tabular-nums}
+.bwl li{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
+.bwl li span{color:var(--hint);flex:1}
+.bwl li b{min-width:68px;text-align:right}
+.bwl li em{font-style:normal;font-size:13px;font-weight:600;color:var(--hint);min-width:44px;text-align:right}
+.bwl li .ib{min-width:30px;height:28px;padding:0}
 .empty2{color:var(--hint);font-size:14px;text-align:center;padding:18px 8px}
 .chart{width:100%;height:auto;display:block;margin-top:10px}
 .chart text{fill:var(--hint);font-size:10px;font-family:inherit}
@@ -182,7 +196,7 @@ body.timing main{padding-bottom:110px}
 .nm p{margin:2px 0 0;color:var(--hint);font-size:13px}
 .rb{border:0;background:var(--soft);border-radius:6px;padding:0 6px;font-size:13px;color:var(--accent)}
 .tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;background:var(--soft);color:var(--hint);margin-left:4px;vertical-align:1px;font-weight:500}
-.tag.c{background:color-mix(in srgb,#e5484d 14%,transparent);color:#e5484d}
+.tag.c{background:color-mix(in srgb,var(--minus) 14%,transparent);color:var(--minus)}
 
 .chk{position:relative;width:32px;height:32px;flex:none}
 .chk input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
@@ -482,6 +496,12 @@ function markTrained(on) {
   else return;
   save("m_" + k, m, true);
 }
+function setBW(d, v) {
+  const k = monKey(d), m = mon(k), day = +d.slice(8);
+  m.bw ||= {};
+  if (v == null) delete m.bw[day]; else m.bw[day] = v;
+  save("m_" + k, m, true);
+}
 function bwSeries() {
   const out = [];
   for (const [k, m] of Object.entries(S.mon)) for (const [d, w] of Object.entries(m.bw || {})) out.push({ d: `${k.slice(0, 4)}-${k.slice(4)}-${pad(+d)}`, v: w });
@@ -749,7 +769,7 @@ function bwHTML() {
   const prev = bwSeries().filter(x => x.d !== TODAY).pop();
   return `
     <div class="bwrow">
-      <div><b>Вес тела</b><small>${prev ? `прошлый: ${fmtW(prev.v)} кг · ${fmtD(prev.d)}` : "впиши, чтобы видеть динамику"}</small></div>
+      <div><b>Вес тела · сегодня, ${fmtD(TODAY)}</b><small>${prev ? `прошлый: ${fmtW(prev.v)} кг · ${fmtD(prev.d)}` : "впиши, чтобы видеть динамику"}</small></div>
       <div class="wubox"><input class="bw" inputmode="decimal" placeholder="${prev ? fmtW(prev.v) : "—"}" value="${today != null ? fmtW(today) : ""}" aria-label="Вес тела сегодня, кг"><span>кг</span></div>
     </div>`;
 }
@@ -836,25 +856,6 @@ const closeSheet = () => { $("sheet").hidden = true; $("sheet").innerHTML = ""; 
 /* ---------- Статистика ---------- */
 const signed = v => `${v > 0 ? "+" : v < 0 ? "−" : "±"}${fmtW(Math.abs(Math.round(v * 10) / 10))}`;
 
-function lineSVG(pts, unit) {
-  if (pts.length < 2) return `<p class="muted">Нужно хотя бы две записи, чтобы построить график</p>`;
-  const W = 320, H = 150, l = 36, r = 12, t = 12, b = 22;
-  const vs = pts.map(p => p.v); let mn = Math.min(...vs), mx = Math.max(...vs);
-  if (mn === mx) { mn -= 1; mx += 1; }
-  const pd = (mx - mn) * 0.12; mn = Math.floor(mn - pd); mx = Math.ceil(mx + pd);
-  const X = i => l + (W - l - r) * i / (pts.length - 1), Y = v => t + (H - t - b) * (1 - (v - mn) / (mx - mn));
-  const line = pts.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join("");
-  const area = `${line}L${X(pts.length - 1).toFixed(1)},${H - b}L${l},${H - b}Z`;
-  const grid = [0, 0.5, 1].map(f => { const v = mn + (mx - mn) * f, y = Y(v).toFixed(1);
-    return `<line class="gr" x1="${l}" x2="${W - r}" y1="${y}" y2="${y}"/><text x="${l - 6}" y="${+y + 3}" text-anchor="end">${fmtW(Math.round(v * 10) / 10)}</text>`; }).join("");
-  const lp = pts[pts.length - 1];
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="График, последнее значение ${fmtW(lp.v)} ${unit}">
-    ${grid}<path class="ar" d="${area}"/><path class="ln" d="${line}"/>
-    ${pts.length <= 30 ? pts.map((p, i) => `<circle class="dot" cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="2.5"/>`).join("") : ""}
-    <circle class="dot last" cx="${X(pts.length - 1).toFixed(1)}" cy="${Y(lp.v).toFixed(1)}" r="4"/>
-    <text x="${l}" y="${H - 6}">${fmtD(pts[0].d)}</text><text x="${W - r}" y="${H - 6}" text-anchor="end">${fmtD(lp.d)}</text>
-  </svg>`;
-}
 
 
 let dash = false;
@@ -878,10 +879,18 @@ function renderDash() {
       const last = bw[bw.length - 1], base = bw.find(x => x.d >= addDays(TODAY, -30)) || bw[0], d30 = last.v - base.v;
       body = `${st3([
         { l: "Сейчас", v: fmtW(last.v), u: "кг", s: fmtD(last.d) },
-        { l: "За 30 дней", v: bw.length > 1 ? signed(d30) : "—", u: bw.length > 1 ? "кг" : "", s: `с ${fmtD(base.d)}` },
+        { l: "За 30 дней", v: bw.length > 1 ? `<span class="${d30 > 0 ? "pos" : d30 < 0 ? "neg" : ""}">${signed(d30)}</span>` : "—", u: bw.length > 1 ? "кг" : "", s: `с ${fmtD(base.d)}` },
         { l: "Мин / макс", v: `${fmtW(Math.min(...bw.map(x => x.v)))}`, u: `/ ${fmtW(Math.max(...bw.map(x => x.v)))}`, s: `${bw.length} записей` },
-      ])}${lineSVG(bw.slice(-60), "кг")}`;
-    } else body = `<p class="empty2">Вписывай вес тела на экране тренировки —<br>здесь появится график.</p>`;
+      ])}`;
+    } else body = `<p class="empty2">Добавь вес тела ниже или на экране тренировки.</p>`;
+    body += `
+      <div class="bwadd">
+        <input type="date" class="inp" id="bwDate" value="${TODAY}" max="${TODAY}" aria-label="Дата">
+        <div class="wubox"><input id="bwVal" inputmode="decimal" placeholder="—" aria-label="Вес, кг"><span>кг</span></div>
+        <button class="btn pri" data-bw-add>Добавить</button>
+      </div>
+      ${bw.length ? `<ul class="bwl">${bw.map((x, i) => ({ ...x, dv: i ? x.v - bw[i - 1].v : null })).reverse().slice(0, 15).map(x =>
+        `<li><span>${fmtD(x.d)}.${x.d.slice(0, 4)}</span>${x.dv != null ? `<em class="${x.dv > 0 ? "pos" : x.dv < 0 ? "neg" : ""}">${signed(x.dv)}</em>` : "<em></em>"}<b>${fmtW(x.v)} кг</b><button class="ib del" data-bw-del="${x.d}" aria-label="Удалить запись ${fmtD(x.d)}">✕</button></li>`).join("")}</ul>` : ""}`;
   }
 
   $("main").innerHTML = `
@@ -1122,6 +1131,15 @@ document.addEventListener("click", e => {
   if (draft) { const b = e.target.closest("[data-ed]"); if (b) onEditorClick(b); return; }
   if (dash) {
     if (e.target.closest("[data-dash-close]")) return closeDash();
+    if (e.target.closest("[data-bw-add]")) {
+      const d = $("bwDate").value, v = num($("bwVal").value);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return warn("Выбери дату");
+      if (v == null || v <= 0) { $("bwVal").focus(); return warn("Впиши вес"); }
+      if (d > TODAY) return warn("Дата не может быть в будущем");
+      setBW(d, v); renderDash(); haptic("ok"); return;
+    }
+    const del = e.target.closest("[data-bw-del]");
+    if (del) { const d = del.dataset.bwDel; return ask(`Удалить вес за ${fmtD(d)}?`, ok => { if (ok) { setBW(d, null); renderDash(); haptic(); } }); }
     return;
   }
   if (!$("sheet").hidden) {
