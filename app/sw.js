@@ -1,7 +1,7 @@
 /* Офлайн-режим: приложение сохраняется на телефоне и открывается без интернета */
-const VER = '2.0.50';
+const VER = '2.0.51';
 const CACHE = 'hero-' + VER;
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', ].concat([1, 2, 3, 4, 5, 6].flatMap(n => [`herof_${n}.webp`, `herof_${n}_f.webp`, `bodyf_${n}_front.webp`, `bodyf_${n}_back.webp`, `hero_${n}.webp`, `hero_${n}_f.webp`, `body_${n}_front.webp`, `body_${n}_back.webp`]));
+const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', ].concat([1, 2, 3, 4, 5, 6].flatMap(n => [`herof_${n}.webp`, `herof_${n}_f.webp`, `bodyf_${n}_front.webp`, `bodyf_${n}_back.webp`, `redf_${n}_front.webp`, `redf_${n}_back.webp`, `hero_${n}.webp`, `hero_${n}_f.webp`, `body_${n}_front.webp`, `body_${n}_back.webp`]));
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
