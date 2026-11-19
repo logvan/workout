@@ -1,5 +1,5 @@
 /* Офлайн-режим: приложение сохраняется на телефоне и открывается без интернета */
-const VER = '2.0.41';
+const VER = '2.0.42';
 const CACHE = 'hero-' + VER;
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', ].concat([1, 2, 3, 4, 5, 6].flatMap(n => [`hero_${n}.webp`, `hero_${n}_f.webp`, `body_${n}_front.webp`, `body_${n}_back.webp`]));
 
