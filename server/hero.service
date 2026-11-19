@@ -1,0 +1,23 @@
+[Unit]
+Description=Dnevnik Geroya (PocketBase)
+After=network.target
+
+[Service]
+Type=simple
+User=hero
+Group=hero
+WorkingDirectory=__DIR__
+Environment=TZ=Europe/Moscow
+ExecStart=__DIR__/pocketbase serve --http=127.0.0.1:__PORT__ --dir=__DIR__/pb_data --migrationsDir=__DIR__/pb_migrations --hooksDir=__DIR__/pb_hooks --origins=__ORIGIN__
+Restart=always
+RestartSec=5
+LimitNOFILE=4096
+# защита: сервис видит только свою папку
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=__DIR__
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
